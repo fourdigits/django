@@ -1930,11 +1930,13 @@ class Ticket34532Tests(SimpleTestCase):
         # should be used on the form
         CustomFormset = formset_factory(CustomForm)
         myformset = CustomFormset()
-        self.assertIsInstance(myformset.renderer, DjangoTemplates)
+        self.assertIs(
+            myformset.renderer, CustomRenderer
+        )  # Not sure about this: why would we render the formset itself using the renderer from the form
         myform = myformset.forms[0]
-        self.assertIsInstance(
+        self.assertIs(
             myform.renderer, CustomRenderer
-        )  # This assert is failing now!
+        )  # This assert was failing before!
 
         # Use a default form with a custom renderer in formset_factory: the
         # custom renderer should prevail in all cases
