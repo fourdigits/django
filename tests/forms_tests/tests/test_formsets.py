@@ -23,7 +23,7 @@ from django.forms.formsets import (
     all_valid,
     formset_factory,
 )
-from django.forms.renderers import TemplatesSetting
+from django.forms.renderers import DjangoTemplates, TemplatesSetting
 from django.forms.utils import ErrorList
 from django.forms.widgets import HiddenInput
 from django.test import SimpleTestCase
@@ -1899,3 +1899,62 @@ class AllValidTests(SimpleTestCase):
         ]
         self.assertEqual(formset1._errors, expected_errors)
         self.assertEqual(formset2._errors, expected_errors)
+
+
+class Ticket34532Tests(SimpleTestCase):
+    def test_formset_factory_applies_correct_form_renderer(self):
+        """Verify that the correct form renderer is used when customizing renderers"""
+
+        class DefaultForm(Form):
+            """A form without a specific renderer"""
+
+            name = CharField()
+
+        # Default use-case: the default renderer should be used in all circumstances
+        CustomFormset = formset_factory(DefaultForm)
+        myformset = CustomFormset()
+        self.assertIsInstance(myformset.renderer, DjangoTemplates)
+        myform = myformset.forms[0]
+        self.assertIsInstance(myform.renderer, DjangoTemplates)
+
+        class CustomRenderer(TemplatesSetting):
+            pass
+
+        class CustomForm(Form):
+            """A form with a custom renderer"""
+
+            default_renderer = CustomRenderer
+            name = CharField()
+
+        # Use a custom form renderer on the Form class: the forms' default_renderer
+        # should be used on the form
+        CustomFormset = formset_factory(CustomForm)
+        myformset = CustomFormset()
+        self.assertIsInstance(myformset.renderer, DjangoTemplates)
+        myform = myformset.forms[0]
+        self.assertIsInstance(
+            myform.renderer, CustomRenderer
+        )  # This assert is failing now!
+
+        # Use a default form with a custom renderer in formset_factory: the
+        # custom renderer should prevail in all cases
+        CustomFormset = formset_factory(DefaultForm, renderer=CustomRenderer())
+        myformset = CustomFormset()
+        self.assertIsInstance(myformset.renderer, CustomRenderer)
+        myform = myformset.forms[0]
+        self.assertIsInstance(myform.renderer, CustomRenderer)
+
+        class OtherRenderer(TemplatesSetting):
+            pass
+
+        class OtherForm(Form):
+            default_renderer = OtherRenderer
+            name = CharField()
+
+        # Combine the forms' default_renderer and the formset_factory renderer: the
+        # formset renderer should prevail in all cases
+        CustomFormset = formset_factory(OtherForm, renderer=CustomRenderer())
+        myformset = CustomFormset()
+        self.assertIsInstance(myformset.renderer, CustomRenderer)
+        myform = myformset.forms[0]
+        self.assertIsInstance(myform.renderer, CustomRenderer)
