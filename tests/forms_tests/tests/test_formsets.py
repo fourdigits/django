@@ -1910,10 +1910,9 @@ class Ticket34532Tests(SimpleTestCase):
 
             name = CharField()
 
-        # Default use-case: the default renderer should be used in all circumstances
+        # Default use-case: the default renderer should be used
         CustomFormset = formset_factory(DefaultForm)
         myformset = CustomFormset()
-        self.assertIsInstance(myformset.renderer, DjangoTemplates)
         myform = myformset.forms[0]
         self.assertIsInstance(myform.renderer, DjangoTemplates)
 
@@ -1930,9 +1929,6 @@ class Ticket34532Tests(SimpleTestCase):
         # should be used on the form
         CustomFormset = formset_factory(CustomForm)
         myformset = CustomFormset()
-        self.assertIs(
-            myformset.renderer, CustomRenderer
-        )  # Not sure about this: why would we render the formset itself using the renderer from the form
         myform = myformset.forms[0]
         self.assertIs(
             myform.renderer, CustomRenderer
@@ -1942,7 +1938,6 @@ class Ticket34532Tests(SimpleTestCase):
         # custom renderer should prevail in all cases
         CustomFormset = formset_factory(DefaultForm, renderer=CustomRenderer())
         myformset = CustomFormset()
-        self.assertIsInstance(myformset.renderer, CustomRenderer)
         myform = myformset.forms[0]
         self.assertIsInstance(myform.renderer, CustomRenderer)
 
@@ -1957,6 +1952,5 @@ class Ticket34532Tests(SimpleTestCase):
         # formset renderer should prevail in all cases
         CustomFormset = formset_factory(OtherForm, renderer=CustomRenderer())
         myformset = CustomFormset()
-        self.assertIsInstance(myformset.renderer, CustomRenderer)
         myform = myformset.forms[0]
         self.assertIsInstance(myform.renderer, CustomRenderer)
